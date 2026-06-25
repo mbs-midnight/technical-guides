@@ -244,6 +244,45 @@ export circuit updateValue(newValue: Uint<64>): [] {
 
 This pattern — store a commitment to a public key or secret, prove knowledge via witness — is the Midnight equivalent of Anchor's `Signer` constraint. It's used everywhere: token ownership, governance, role-based access. Get comfortable with it early.
 
+### The TS SDK as Transaction Orchestrator: Replacing CPI
+
+On Solana, CPI lets one program call another mid-execution — a single transaction can chain program logic atomically. On Midnight, circuits are closed computations. They cannot call other contracts at runtime.
+
+The equivalent composability pattern moves to the **TypeScript SDK layer**, which assembles multi-step flows before anything hits the chain:
+
+```typescript
+// Solana mental model: Program A calls Program B via CPI mid-execution
+// (atomic, single transaction, on-chain)
+
+// Midnight mental model: SDK orchestrates multiple circuit calls,
+// bundled into a single transaction with multiple proofs
+
+const tx = await sdk.buildTransaction([
+  // Step 1: prove eligibility (circuit call 1)
+  await credentialContract.proveEligibility({
+    witnesses: { getCreditScore: () => wallet.getCreditScore() }
+  }),
+
+  // Step 2: execute the action that depends on eligibility (circuit call 2)
+  await vaultContract.withdraw({
+    witnesses: { secretKey: () => wallet.getSecretKey() },
+    args: { amount: 1000n }
+  }),
+
+  // Both proofs + their UTXO flows bundled into one atomic transaction
+]);
+
+await wallet.submitTransaction(tx);
+```
+
+**The key difference from CPI:** the SDK assembles both circuit calls *before* submission. The transaction is atomic — both succeed or neither applies — but the composition happens off-chain in TypeScript, not mid-execution on-chain. This means:
+
+- Contract B cannot read or modify state based on what Contract A just computed in the same execution context
+- Cross-contract *data* dependencies must be expressed through shared ledger state that was committed in a prior transaction
+- The TS layer is where your protocol's sequencing logic lives, not the circuit
+
+For Solana developers: think of it less like CPI and more like building a versioned transaction with multiple instructions — except the "instructions" are ZK proofs, and the sequencing guarantee is enforced by the transaction's well-formedness check rather than the runtime.
+
 ---
 
 ## 5. The Privacy Model: Private by Default
