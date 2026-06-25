@@ -52,6 +52,32 @@ Everything downstream in this guide — privacy-by-default, the three-part contr
 
 ## 3. The State Model: Accounts → UTXOs
 
+```mermaid
+flowchart LR
+    subgraph Ethereum["Ethereum Account Model"]
+        direction TB
+        E1[Global State Trie]
+        E2[mapping address → balance]
+        E3[msg.sender always visible<br/>Everything public by default]
+        E1 --> E2
+        E2 --> E3
+    end
+
+    subgraph Midnight["Midnight UTXO + ZK Model"]
+        direction TB
+        M1[UTXO Set + Nullifier Set]
+        M2[Shielded commitments hide value & owner]
+        M3[No msg.sender exposed to contracts<br/>Privacy by default via compiler]
+        M1 --> M2
+        M2 --> M3
+    end
+
+    classDef eth fill:#ffebee,stroke:#c62828
+    classDef mid fill:#e8f5e9,stroke:#2e7d32
+    class Ethereum eth
+    class Midnight mid
+```
+
 This is the biggest structural change for Ethereum developers. Ethereum runs an **account model** — there's a global state trie where every address has a balance. Midnight runs a **UTXO model**, extended with ZK-native privacy features.
 
 ### Account Model (Ethereum)
