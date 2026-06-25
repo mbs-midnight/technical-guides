@@ -60,9 +60,42 @@ flowchart LR
 
 **The UTXO model with shielding.** Midnight uses a UTXO model extended with ZK-based commitments that hide value and ownership. Shielding is a per-UTXO property; a single transaction can mix shielded and unshielded UTXOs.
 
+```mermaid
+flowchart TD
+    A[Create Shielded UTXO<br/>Value + owner hidden in commitment] --> B{Hold or Receive}
+    B --> C[Spend UTXO]
+    C --> D[Prove knowledge of secret key<br/>+ generate nullifier]
+    D --> E[Publish nullifier to set<br/>Prevents double-spend without revealing which UTXO]
+    E --> F{Disclose?}
+    F -->|Yes| G[Use disclose() annotation<br/>Value/owner becomes public]
+    F -->|No| H[Remains private forever]
+
+    classDef shield fill:#e1bee7,stroke:#7b1fa2
+    class A,B,C,D,E,F,G,H shield
+```
+
 **NIGHT and DUST.** NIGHT is the publicly transferable governance/staking token. DUST is a non-transferable resource generated passively by holding NIGHT, used to pay transaction fees. The split decouples fee costs from token price volatility and enables sponsored (gasless) transactions for end users.
 
 **The two-phase transaction model.** Unlike the all-or-nothing revert semantics of most chains, Midnight transactions have a guaranteed phase (always succeeds or the transaction is dropped) and a fallible phase (can partially succeed). Understanding this is critical for safe contract design.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant dApp/Wallet
+    participant ProofServer
+    participant Midnight
+
+    User->>dApp/Wallet: Initiate transaction
+    dApp/Wallet->>ProofServer: Generate ZK proof (off-chain)
+    ProofServer-->>dApp/Wallet: Proof returned
+    dApp/Wallet->>Midnight: Submit tx (proof + UTXOs + DUST fee)
+
+    Note over Midnight: Phase 1: Guaranteed<br/>(Well-formedness + state checks.<br/>DUST is collected. Tx either succeeds here or is dropped.)
+
+    Note over Midnight: Phase 2: Fallible<br/>(Circuit logic executes.<br/>May partially succeed — effects are not atomic.)
+
+    Midnight-->>dApp/Wallet: Transaction result<br/>(partial state changes possible)
+```
 
 **Cross-contract calls are not yet available.** Compact 1.0 reserves the `contract` keyword for future cross-contract call support, but it is not currently implemented. Composition happens at compile time via module imports, not at runtime.
 
