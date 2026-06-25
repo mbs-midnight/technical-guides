@@ -49,7 +49,7 @@ Each guide includes:
 
 **Cross-contract calls are not yet available.** Compact 1.0 reserves the `contract` keyword for future cross-contract call support, but it is not currently implemented. Composition happens at compile time via module imports, not at runtime.
 
-```
+```mermaid
 flowchart TD
     subgraph Dev["Developer / User Machine"]
         A[Write Compact Contract<br/>export ledger + circuits + witnesses] --> B[Compile with compactc]
