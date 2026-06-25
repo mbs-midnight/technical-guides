@@ -12,11 +12,11 @@ All guides target Midnight mainnet (launched March 2026) and Compact `language_v
 
 | Guide | Audience |
 |---|---|
-| [From Ethereum to Midnight](./getting-started:%20ethereum-to-midnight.md) | Solidity / EVM developers |
-| [From Solana to Midnight](./getting-started:%20solana-to-midnight.md) | Rust / Anchor / SVM developers |
-| [From Polkadot to Midnight](./getting-started:%20polkadot-to-midnight.md) | ink! / Substrate / parachain developers |
-| [From Cosmos to Midnight](./getting-started:%20cosmos-to-midnight.md) | CosmWasm / Cosmos SDK developers |
-| [From Cardano to Midnight](./getting-started:%20cardano-to-midnight.md) | Aiken / Plutus / eUTXO developers |
+| [From Ethereum to Midnight](./ethereum-to-midnight.md) | Solidity / EVM developers |
+| [From Solana to Midnight](./solana-to-midnight.md) | Rust / Anchor / SVM developers |
+| [From Polkadot to Midnight](./polkadot-to-midnight.md) | ink! / Substrate / parachain developers |
+| [From Cosmos to Midnight](./cosmos-to-midnight.md) | CosmWasm / Cosmos SDK developers |
+| [From Cardano to Midnight](./cardano-to-midnight.md) | Aiken / Plutus / eUTXO developers |
 
 Each guide includes:
 - What carries over from your current ecosystem (and why)
