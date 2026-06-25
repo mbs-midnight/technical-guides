@@ -132,3 +132,10 @@ Before submitting, verify any Compact code examples against the current compiler
 ---
 
 *These guides are produced independently and are not official Midnight Foundation documentation. For canonical protocol specifications, consult [docs.midnight.network](https://docs.midnight.network) and the [Midnight Improvement Proposals repository](https://github.com/midnightntwrk/midnight-improvement-proposals).*
+
+---
+
+## License
+
+This repository is licensed under the [MIT License](LICENSE).  
+See the [LICENSE](LICENSE) file for the full text.
