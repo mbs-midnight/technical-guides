@@ -349,6 +349,28 @@ Upside: predictable proving cost, no runtime gas-exhaustion class of bugs. Downs
 
 ---
 
+## 6.1. Zswap in Practice: A Minimal Swap
+The coat-check analogy explains why Zswap works. Here's what it looks like when you actually use it. A user wanting to swap 100 NIGHT for USDC constructs an offer off-chain via the SDK — no contract call, no approve():
+
+```typescript// Off-chain, using Midnight.js SDK
+const aliceOffer = await wallet.buildOffer({
+  inputs: [nightUtxo],          // Alice's shielded NIGHT UTXO
+  outputs: [{
+    tokenType: USDC_TOKEN_TYPE,
+    value: 95n,
+    owner: alice.dustPublicKey
+  }],
+  // Balance vector: NIGHT -100, USDC +95
+  // Matcher will only accept a counterparty that fills the gap
+});
+
+// Submit to a matcher service — matcher never sees amounts,
+// only verifies the combined balance vector nets to zero
+const tx = await matcher.merge(aliceOffer, bobOffer);
+await wallet.submitTransaction(tx);
+```
+The key developer takeaway: token swaps are transaction structure, not contract calls. There is no DEX contract to call, no router to approve, no interface to implement. The atomic swap guarantee is enforced by the balance vector in the proof itself.
+
 ## 7. Witnesses: The Part With No Ethereum Analog
 
 A **witness** is a function *declared* in Compact but *implemented* in TypeScript on the user's machine. It supplies private data into a circuit — a secret key, an off-chain credential, a private balance — without that data ever going on-chain or being seen by anyone else.
