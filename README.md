@@ -43,16 +43,16 @@ Each guide includes:
 flowchart LR
     subgraph Contract["Compact Contract Structure"]
         direction TB
-        L["Public Ledger State<br/>export ledger field: Type;<br/>Visible on-chain, mutable"]
-        C["Circuits<br/>export circuit foo()<br/>Compiled to ZK arithmetic circuits<br/>Provable entry points"]
-        W["Witnesses<br/>witness secretKey()<br/>Private off-chain only<br/>No on-chain equivalent"]
+        L["Public Ledger State<br>export ledger field: Type;<br>Visible on-chain, mutable"]
+        C["Circuits<br>export circuit foo()<br>Compiled to ZK arithmetic circuits<br>Provable entry points"]
+        W["Witnesses<br>witness secretKey()<br>Private off-chain only<br>No on-chain equivalent"]
     end
 
     L -.->|read / write via circuits| C
     W -->|supply private inputs| C
     C -->|produce ZK proof| Validators
 
-    classDef box fill:#f5f5f5,stroke:#333
+    classDef box stroke:#374151,stroke-width:2px
     class L,C,W box
 ```
 
@@ -70,8 +70,8 @@ flowchart TD
     F -->|Yes| G["Use disclose() annotation<br>Value/owner becomes public"]
     F -->|No| H["Remains private forever"]
 
-    classDef shield fill:#e1bee7,stroke:#7b1fa2
-    class A,B,C,D,E,F,G,H shield
+    classDef main stroke:#8957e5,stroke-width:2px
+    class A,B,C,D,E,F,G,H main
 ```
 
 **NIGHT and DUST.** NIGHT is the publicly transferable governance/staking token. DUST is a non-transferable resource generated passively by holding NIGHT, used to pay transaction fees. The split decouples fee costs from token price volatility and enables sponsored (gasless) transactions for end users.
@@ -102,22 +102,22 @@ sequenceDiagram
 ```mermaid
 flowchart TD
     subgraph Dev["Developer / User Machine"]
-        A[Write Compact Contract<br/>export ledger + circuits + witnesses] --> B[Compile with compactc]
-        B --> C[Implement Witnesses<br/>private off-chain functions]
+        A["Write Compact Contract<br>export ledger + circuits + witnesses"] --> B[Compile with compactc]
+        B --> C["Implement Witnesses<br>private off-chain functions"]
     end
 
     C --> D[User triggers action in dApp]
-    D --> E[Execute circuit off-chain<br/>with private witness inputs]
+    D --> E["Execute circuit off-chain<br>with private witness inputs"]
     E --> F[Generate Zero-Knowledge Proof]
 
     subgraph Network["Midnight Network"]
-        F --> G[Submit Proof + Public State Transition]
-        G --> H[Validators Verify Proof Only<br/>Never re-execute logic]
-        H --> I[Update Public Ledger<br/>Only commitments + nullifiers visible]
+        F --> G["Submit Proof + Public State Transition"]
+        G --> H["Validators Verify Proof Only<br>Never re-execute logic"]
+        H --> I["Update Public Ledger<br>Only commitments + nullifiers visible"]
     end
 
-    classDef dev fill:#e3f2fd,stroke:#1976d2
-    classDef net fill:#fff3e0,stroke:#f57c00
+    classDef dev stroke:#0366d6,stroke-width:2px
+    classDef net stroke:#d97706,stroke-width:2px
     class Dev dev
     class Network net
 ```
