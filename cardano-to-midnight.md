@@ -2,7 +2,7 @@
 
 *The eUTXO model you know is the best possible foundation. Here's what changes — and what to watch out for.*
 
-**Midnight Network Foundation | June 2026**
+**Midnight Foundation | June 2026**
 
 > **Version note:** Midnight mainnet launched March 31, 2026 in a federated phase — a curated set of trusted node operators (IOG, Google Cloud, Vodafone) runs the network while decentralization via Cardano SPO onboarding is completed in the Mōhalu phase (Q2–Q3 2026). Compact targets `language_version >= 0.23`. Cross-contract calls are reserved in the language spec but not yet implemented in Compact 1.0. Always verify against [docs.midnight.network](https://docs.midnight.network) before shipping.
 
