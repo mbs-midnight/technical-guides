@@ -65,7 +65,7 @@ flowchart TD
     A[Create Shielded UTXO<br/>Value + owner hidden in commitment] --> B{Hold or Receive}
     B --> C[Spend UTXO]
     C --> D[Prove knowledge of secret key<br/>+ generate nullifier]
-    D --> E[Publish nullifier to set<br/>Prevents double-spend without revealing which UTXO]
+    D --> E[Publish nullifier to set<br>Prevents double-spend without revealing which UTXO]
     E --> F{Disclose?}
     F -->|Yes| G[Use disclose() annotation<br/>Value/owner becomes public]
     F -->|No| H[Remains private forever]
