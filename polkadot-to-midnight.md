@@ -2,7 +2,7 @@
 
 *You already think in Rust, runtime upgrades, and parachain architecture. Time to think in ZK proofs and private witnesses.*
 
-**Midnight Network Foundation | June 2026**
+**Midnight Foundation | June 2026**
 
 > **Version note:** Midnight mainnet launched March 31, 2026 in a federated phase — a curated set of trusted node operators (IOG, Google Cloud, Vodafone) runs the network while decentralization is completed via Cardano SPO onboarding. Compact targets `language_version >= 0.23`. Cross-contract calls are reserved in the language spec but not yet implemented in Compact 1.0. Always verify against [docs.midnight.network](https://docs.midnight.network) before shipping.
 
