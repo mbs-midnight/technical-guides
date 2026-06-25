@@ -95,6 +95,44 @@ Midnight UTXOs carry value and a cryptographic commitment to ownership — but n
 | Minting policy | Token type derivation from contract | Token identity cryptographically bound to contract |
 | Reference inputs | No equivalent | Circuits cannot read external UTXOs |
 
+### Oracle-via-Witness: Replacing Reference Inputs
+
+Cardano's reference inputs (CIP-31) let validators read external UTXOs without consuming them — used heavily for oracle price feeds and shared configuration. Midnight circuits cannot read external UTXOs at all.
+
+The replacement is the **oracle-via-witness pattern**: the oracle signs data off-chain, the user fetches both the data and the signature locally, and the circuit verifies the signature cryptographically. The oracle never touches the chain; the proof certifies the data is authentic.
+
+```compact
+// The oracle's public key is hardcoded at deployment as a sealed field —
+// immutable after initialization, like a parameterized Cardano script
+export ledger sealed oraclePublicKey: Bytes<32>;
+export ledger lastVerifiedPrice: Uint<64>;
+export ledger round: Counter;
+
+// Witnesses: user fetches oracle data locally before proof generation
+witness getOraclePrice(): Uint<64>;
+witness getOracleSignature(): Bytes<64>;
+
+export circuit updatePrice(): [] {
+    const price = getOraclePrice();
+    const sig = getOracleSignature();
+
+    // Verify the oracle actually signed this price
+    // The ZK proof certifies this without the signature hitting the chain
+    assert(
+        verifySignature(oraclePublicKey, price, sig),
+        "Invalid oracle signature"
+    );
+
+    // Only the verified price becomes public
+    lastVerifiedPrice = disclose(price);
+    round.increment(1);
+}
+```
+
+**Operational pattern:** The oracle service publishes signed price updates to an off-chain endpoint (HTTP, IPFS, etc.). Before submitting a transaction, the user's dApp fetches the latest signed price via the witness implementation, passes it into the circuit, and the ZK proof attests that a valid signature was verified. The oracle's signing key is the trust anchor — the circuit enforces it mathematically.
+
+This is more powerful than Cardano reference inputs in one respect: the oracle data never appears on-chain at all, not even as a reference. The chain only sees the verified result.
+
 ---
 
 ## 3. Compact vs. Aiken: The Language Comparison
@@ -470,6 +508,30 @@ export circuit increment(): [] {
 ```
 
 > **Relief for Cardano developers:** the continuing output pattern is a workaround for the fact that eUTXO state must live in UTXOs. Midnight's ledger fields are direct on-chain contract state storage — no workaround needed. If you've spent hours debugging scripts that fail because the wrong output went back to the script address with the wrong datum, this will feel like a significant relief.
+
+### Shared-State Contention: The Batcher Pattern Still Applies
+
+The continuing output problem is gone. The sequentialization problem isn't.
+
+Any circuit that modifies shared ledger state can only have one successful transaction per block. If a Midnight AMM has 50 users trying to swap against the same pool in the same block, 49 of them will hit a guaranteed-phase failure — their proofs were built against ledger state that another transaction already changed.
+
+This is a narrower bottleneck than Cardano's (where a single script UTXO blocks all concurrent interactions), but for high-throughput shared-state applications the architectural response is the same: **an off-chain batcher**.
+
+```
+User A → [build proof] →  \
+User B → [build proof] →   → Batcher → single batched tx → chain
+User C → [build proof] →  /
+```
+
+The batcher collects user intents off-chain, aggregates them into a single circuit call that processes all updates atomically, and submits one transaction. Users get inclusion without competing for the same ledger state slot.
+
+**What's different from Cardano batchers:**
+
+- No script UTXO to contend over — the contention is at the contract ledger level, not the UTXO level
+- Proof invalidation is the failure mode: a user who built a proof against stale state must rebuild it, which takes seconds — budget for this in retry logic
+- The batcher doesn't need to hold custody of UTXOs (unlike Cardano order-book batchers) — it just orchestrates proof submission ordering
+
+For AMMs, lending protocols, or any design with a shared global state field that many users update concurrently: design the batcher architecture before you design the circuit. The circuit can be elegant; the batcher is where the operational complexity lives.
 
 ### Concurrency: A Familiar Problem with a Different Shape
 
