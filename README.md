@@ -39,6 +39,23 @@ Each guide includes:
 
 **The three-part contract structure.** Every Compact contract has public ledger state (`export ledger` fields), circuits (the provable entry points compiled to ZK arithmetic circuits), and witnesses (private off-chain functions with no equivalent in most other ecosystems).
 
+```mermaid
+flowchart LR
+    subgraph Contract["Compact Contract Structure"]
+        direction TB
+        L["Public Ledger State<br/>export ledger field: Type;<br/>Visible on-chain, mutable"]
+        C["Circuits<br/>export circuit foo()<br/>Compiled to ZK arithmetic circuits<br/>Provable entry points"]
+        W["Witnesses<br/>witness secretKey()<br/>Private off-chain only<br/>No on-chain equivalent"]
+    end
+
+    L -.->|read / write via circuits| C
+    W -->|supply private inputs| C
+    C -->|produce ZK proof| Validators
+
+    classDef box fill:#f5f5f5,stroke:#333
+    class L,C,W box
+```
+
 **Privacy by default.** Any value derived from a witness function is private. The Compact compiler statically enforces this — private-origin data cannot reach the public ledger without an explicit `disclose()` annotation. Privacy is a compile-time guarantee, not a runtime check.
 
 **The UTXO model with shielding.** Midnight uses a UTXO model extended with ZK-based commitments that hide value and ownership. Shielding is a per-UTXO property; a single transaction can mix shielded and unshielded UTXOs.
