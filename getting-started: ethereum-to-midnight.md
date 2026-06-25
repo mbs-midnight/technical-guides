@@ -382,8 +382,6 @@ while (i < dynamicArray.length) { ... }
 
 Upside: predictable proving cost, no runtime gas-exhaustion class of bugs. Downside: no unbounded loops. Plan your data structures around fixed bounds.
 
----
-
 ### Zswap in Practice: A Minimal Swap
 The coat-check analogy explains why Zswap works. Here's what it looks like when you actually use it. A user wanting to swap 100 NIGHT for USDC constructs an offer off-chain via the SDK — no contract call, no approve():
 
