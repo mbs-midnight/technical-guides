@@ -171,6 +171,41 @@ A Zswap **offer** is the unit of value transfer in a transaction. It has four pa
 
 > **Zswap implementation note:** the official docs flag this layer as not yet performance-optimized and subject to further revision. The conceptual model is stable; specific API surface and proof costs should be verified against current docs before building production integrations.
 
+Selective Disclosure in Practice: Proving a Threshold Without Revealing the Value
+
+The compliance use case Midnight is built for — proving you meet a requirement without disclosing the underlying data. This is the pattern that enables KYC thresholds, accredited investor checks, and credit scoring without exposing raw numbers:
+
+```compact
+// Witness: fetches private credit score from user's local state
+// Could be a signed credential from an off-chain issuer
+witness getCreditScore(): Uint<64>;
+
+// Witness: fetches the issuer's signature over the score
+witness getIssuerSignature(): Bytes<64>;
+
+// On-chain: only the compliance result is public
+export ledger meetsThreshold: Boolean;
+export ledger round: Counter;
+
+export circuit proveEligibility(): [] {
+    const score = getCreditScore();
+    const sig = getIssuerSignature();
+
+    // Verify the issuer actually signed this score
+    // (prevents users from fabricating their own scores)
+    assert(verifySignature(ISSUER_PUBLIC_KEY, score, sig), "Invalid credential");
+
+    // Prove the threshold — score stays private, result is public
+    assert(score >= 700, "Score below eligibility threshold");
+
+    // Only this boolean hits the chain — not the score, not the signature
+    meetsThreshold = disclose(true);
+    round.increment(1);
+}
+```
+
+The chain records that the user meets the threshold. The score, the credential, and the issuer signature never leave the user's machine. The proof certifies all three facts simultaneously.
+
 ---
 
 ## 6. Compact vs. Solidity: The Contract Language
@@ -371,6 +406,8 @@ await wallet.submitTransaction(tx);
 ```
 The key developer takeaway: token swaps are transaction structure, not contract calls. There is no DEX contract to call, no router to approve, no interface to implement. The atomic swap guarantee is enforced by the balance vector in the proof itself.
 
+---
+
 ## 7. Witnesses: The Part With No Ethereum Analog
 
 A **witness** is a function *declared* in Compact but *implemented* in TypeScript on the user's machine. It supplies private data into a circuit — a secret key, an off-chain credential, a private balance — without that data ever going on-chain or being seen by anyone else.
@@ -392,6 +429,31 @@ const witnesses = {
 A buggy or malicious witness can leak secrets, produce invalid proofs, or undermine the guarantees of the contract. OpenZeppelin's Compact library explicitly ships test witnesses only — not production witnesses — for exactly this reason. If you consume that library, you must author and audit your own witnesses for production use.
 
 > **Analogy:** A witness is like showing a bouncer your ID. The bouncer (the circuit) checks that the ID is valid and the photo matches, then lets you in — but the club's guest list (the public ledger) never records your home address. The proof says "an authorized person entered," not "here is everything on their driver's license."
+
+---
+
+## 7.1. Debugging Failed Proofs
+
+Ethereum developers are accustomed to revert reasons in stack traces. Midnight's failure modes are different because execution is off-chain.
+
+**Where failures actually happen:**
+
+| Failure point | What it means | How to diagnose |
+|---|---|---|
+| `compactc` compile error | `disclose()` violation, type error, non-constant loop bound | Read the compiler output — it's precise and line-numbered |
+| Proof generation failure | An `assert()` in a circuit evaluated to false with the given inputs | Add logging to your witness implementations; the assert message is surfaced by the SDK |
+| Well-formedness rejection | ZK proof invalid, or offer balance vector doesn't net to zero | Check nullifiers aren't already spent; check token arithmetic |
+| Guaranteed phase failure | Transaction not included; no DUST spent | Usually a ledger state conflict — another tx landed first |
+| Fallible phase failure | Partial success; DUST forfeited | Check your circuit's `assert()` conditions against actual ledger state at submission time |
+
+**The most common source of confusion:** the circuit runs locally and succeeds, but the transaction fails on-chain because ledger state changed between when you built the proof and when the transaction landed. This is the Midnight equivalent of a nonce race — rebuild the proof against current ledger state and resubmit.
+
+**Practical debugging workflow:**
+
+1. Isolate witness logic in unit tests first — test your TypeScript witness implementations independently of the circuit
+2. Use the proof server's verbose logging mode during development
+3. Log all ledger state reads inside witness implementations so you can replay what the circuit saw
+4. For `assert()` failures, the SDK surfaces the message string — design your assert messages to be diagnostic, not just "Not authorized"
 
 ---
 
