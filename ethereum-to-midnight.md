@@ -2,7 +2,7 @@
 
 *Everything you know is useful. Some of it needs updating.*
 
-**Midnight Network Foundation | June 2026**
+**Midnight Foundation | June 2026**
 
 > **Version note:** Midnight mainnet launched March 2026. Compact targets `language_version >= 0.23`. Low-level Zswap/coin mechanics are flagged by the official docs as not yet fully stable — always verify against [docs.midnight.network](https://docs.midnight.network) before shipping.
 
