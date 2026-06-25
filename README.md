@@ -12,13 +12,7 @@ All guides target Midnight mainnet (launched March 2026) and Compact `language_v
 
 ### Getting Started
 
-| Guide | Audience |
-|---|---|
-| [Getting Started with Midnight — For Ethereum Devs](./midnight-for-ethereum-devs.md) | Developers familiar with Solidity, the EVM account model, and ERC-20 tokens who want a full orientation before reading ecosystem-specific guides |
-
-This doc covers the foundational concepts — the ZK execution model, the three-part contract structure (ledger / circuits / witnesses), the UTXO token model, NIGHT/DUST, Zswap, and the two-phase transaction model — with Ethereum as the baseline for comparison. **Start here if you're new to Midnight regardless of your background.**
-
-### Ecosystem Migration Guides
+### Ecosystem Upskill Guides
 
 | Guide | Primary audience |
 |---|---|
