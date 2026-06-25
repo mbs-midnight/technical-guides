@@ -171,7 +171,7 @@ A Zswap **offer** is the unit of value transfer in a transaction. It has four pa
 
 > **Zswap implementation note:** the official docs flag this layer as not yet performance-optimized and subject to further revision. The conceptual model is stable; specific API surface and proof costs should be verified against current docs before building production integrations.
 
-Selective Disclosure in Practice: Proving a Threshold Without Revealing the Value
+### Selective Disclosure in Practice: Proving a Threshold Without Revealing the Value
 
 The compliance use case Midnight is built for — proving you meet a requirement without disclosing the underlying data. This is the pattern that enables KYC thresholds, accredited investor checks, and credit scoring without exposing raw numbers:
 
@@ -384,7 +384,7 @@ Upside: predictable proving cost, no runtime gas-exhaustion class of bugs. Downs
 
 ---
 
-## 6.1. Zswap in Practice: A Minimal Swap
+### Zswap in Practice: A Minimal Swap
 The coat-check analogy explains why Zswap works. Here's what it looks like when you actually use it. A user wanting to swap 100 NIGHT for USDC constructs an offer off-chain via the SDK — no contract call, no approve():
 
 ```typescript// Off-chain, using Midnight.js SDK
@@ -430,9 +430,7 @@ A buggy or malicious witness can leak secrets, produce invalid proofs, or underm
 
 > **Analogy:** A witness is like showing a bouncer your ID. The bouncer (the circuit) checks that the ID is valid and the photo matches, then lets you in — but the club's guest list (the public ledger) never records your home address. The proof says "an authorized person entered," not "here is everything on their driver's license."
 
----
-
-## 7.1. Debugging Failed Proofs
+### Debugging Failed Proofs
 
 Ethereum developers are accustomed to revert reasons in stack traces. Midnight's failure modes are different because execution is off-chain.
 
