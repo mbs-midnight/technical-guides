@@ -231,18 +231,21 @@ CosmWasm has no concept of private inputs — every argument, every storage valu
 ```compact
 witness _userScore(): Uint<64>;   // private origin
 
+export ledger lastScore: Uint<64>;
+export ledger qualifies: Boolean;
+
 export circuit submitScore(): [] {
     const score = _userScore();
 
     // ❌ COMPILE ERROR: witness-derived value cannot land on-chain directly
-    ledger.lastScore = score;
+    lastScore = score;
 
     // ✅ CORRECT: explicit privacy boundary crossing
-    ledger.lastScore = disclose(score);
+    lastScore = disclose(score);
 
     // ✅ ALSO VALID: prove a property about score without disclosing the value
     assert(score >= 500, "Score below minimum threshold");
-    ledger.qualifies = disclose(true);  // only the boolean hits the chain
+    qualifies = disclose(true);  // only the boolean hits the chain
 }
 ```
 
