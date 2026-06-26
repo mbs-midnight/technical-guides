@@ -2,7 +2,7 @@
 
 *You already understand parallelism and stateless programs. The rest is a privacy upgrade.*
 
-**Midnight Network Foundation | June 2026**
+**Midnight Foundation | June 2026**
 
 > **Version note:** Midnight mainnet launched March 2026. Compact targets `language_version >= 0.23`. Cross-contract calls are reserved in the language spec but not yet implemented in Compact 1.0 — see §4. Always verify against [docs.midnight.network](https://docs.midnight.network) before shipping.
 
