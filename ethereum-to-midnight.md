@@ -4,7 +4,7 @@
 
 **Midnight Foundation | June 2026**
 
-> **Version note:** Midnight mainnet launched March 2026. Compact targets `language_version >= 0.23`. Low-level Zswap/coin mechanics are flagged by the official docs as not yet fully stable — always verify against [docs.midnight.network](https://docs.midnight.network) before shipping.
+> **Version note:** Midnight mainnet launched March 31, 2026 in a federated phase — a curated set of trusted node operators (IOG, Google Cloud, Vodafone) runs the network while decentralization via Cardano SPO onboarding is completed. Compact targets `language_version >= 0.23`. Low-level Zswap/coin mechanics are flagged by the official docs as not yet fully stable — always verify against [docs.midnight.network](https://docs.midnight.network) before shipping.
 
 ---
 
@@ -308,20 +308,30 @@ enum State { UNSET, SET }
 export ledger authority: Bytes<32>;
 export ledger value: Uint<64>;
 export ledger state: State;
-export ledger round: Counter;  // anonymity counter — see security section
+export ledger round: Counter;
 
 witness getSecretKey(): Bytes<32>;
 
+// Helper circuit: domain-separated commitment with round counter
+// Never use persistentHash(sk) directly — domain confusion and replay attacks
+// Never use ownPublicKey() — it is unconstrained (see security section)
+circuit ownerKey(sk: Bytes<32>): Bytes<32> {
+    return persistentHash<Vector<3, Bytes<32>>>(
+        [pad(32, "vault:owner:"), round as Bytes<32>, sk]
+    );
+}
+
 constructor(sk: Bytes<32>, initialValue: Uint<64>) {
-    authority = disclose(persistentHash(sk));
+    authority = disclose(ownerKey(sk));
     value = disclose(initialValue);
     state = State.UNSET;
+    round.increment(1);
 }
 
 export circuit set(newValue: Uint<64>): [] {
     assert(state == State.UNSET, "Already set");
     // Prove caller knows the secret behind authority — without revealing the secret
-    assert(authority == persistentHash(getSecretKey()), "Not authorized");
+    assert(ownerKey(getSecretKey()) == authority, "Not authorized");
     value = disclose(newValue);
     state = State.SET;
     round.increment(1);
@@ -329,13 +339,15 @@ export circuit set(newValue: Uint<64>): [] {
 
 export circuit clear(): [] {
     assert(state == State.SET, "Nothing to clear");
-    assert(authority == persistentHash(getSecretKey()), "Not authorized");
+    assert(ownerKey(getSecretKey()) == authority, "Not authorized");
     state = State.UNSET;
     round.increment(1);
 }
 ```
 
-Look at `clear()`. There's no `require(msg.sender == owner)`. The user feeds their secret key in through a witness, the circuit hashes it and compares it against the stored `authority` — and the proof attests "the person who built this transaction knows the secret behind `authority`" without the key ever touching the chain. That's the paradigm in one function.
+Look at `clear()`. There's no `require(msg.sender == owner)`. The user feeds their secret key in through a witness, the `ownerKey` helper circuit derives a domain-separated commitment and compares it against the stored `authority` — and the proof attests "the person who built this transaction knows the secret behind `authority`" without the key ever touching the chain. That's the paradigm in one function.
+
+The domain tag (`"vault:owner:"`) and round counter in `ownerKey` are not optional decoration. Without the domain tag, the same secret key would produce the same commitment in every contract — a single compromised key unlocks all of them. Without the round counter, commitment values are stable across transactions, enabling correlation attacks. Both are required for the pattern to be secure.
 
 ### Where's `msg.sender`?
 
@@ -350,14 +362,16 @@ In Compact, **circuit inputs are private by default**. The compiler tracks data 
 ```compact
 witness _privateAmount(): Uint<64>;
 
+export ledger total: Uint<64>;
+
 export circuit transfer(recipient: Bytes<32>): [] {
     const amount = _privateAmount();
 
     // ❌ COMPILE ERROR: cannot place witness-derived value on-chain
-    ledger.total = ledger.total + amount;
+    total = total + amount;
 
     // ✅ CORRECT: explicitly mark this as safe to disclose
-    ledger.total = ledger.total + disclose(amount);
+    total = total + disclose(amount);
 }
 ```
 
@@ -372,7 +386,7 @@ EVM execution is metered at runtime — you can run out of gas halfway through a
 ```compact
 // ✅ Bounded — compile-time constant ceiling
 for (let i = 0; i < 10; i++) {
-    if (i < count) { total = total + ledger.items[i]; }
+    if (i < count) { total = total + items[i]; }
 }
 
 // ❌ Not valid — no dynamic loop bounds
@@ -430,13 +444,13 @@ A single transaction can mix shielded and unshielded components:
 
 ### The Two-Phase Execution Model
 
-Ethereum transactions are atomic: they fully succeed or fully revert. Midnight splits execution into phases, and the difference matters.
+Ethereum transactions are atomic: they fully succeed or fully revert. Midnight uses a **two-phase model** — but with a preliminary well-formedness check that runs before either phase touches state.
 
-**Phase 1 — Well-formedness check:** Runs against no state. Verifies all ZK proofs, the Schnorr proof on the contract section, and that offers are balanced (accounting for fees and mints). A bad proof or unbalanced offer → rejected outright, not included.
+**Well-formedness check (pre-execution, stateless):** Runs against no state. Verifies all ZK proofs, the Schnorr proof on the contract section, and that offers are balanced (accounting for fees and mints). A bad proof or unbalanced offer → rejected outright, not included. No DUST is spent.
 
-**Phase 2 — Guaranteed phase:** Runs against ledger state. **Fees are collected here.** If this phase fails, the transaction is *not included in the ledger at all*.
+**Phase 1 — Guaranteed phase:** Runs against ledger state. **Fees are collected here.** If this phase fails, the transaction is *not included in the ledger at all*.
 
-**Phase 3 — Fallible phase:** Also runs against ledger state. If this fails, the effects of the guaranteed phase **still apply**, and the transaction is recorded as a **partial success**. Fees are forfeited.
+**Phase 2 — Fallible phase:** Also runs against ledger state. If this fails, the effects of the guaranteed phase **still apply**, and the transaction is recorded as a **partial success**. Fees are forfeited.
 
 > **Why this matters:** a transaction can land in a "partially applied" state with no clean revert. Design interactions so that a partial success is always a safe state to be in. Don't put an invariant-critical step in the fallible phase if the guaranteed phase already committed something that depends on it. Fee payment and must-succeed core logic belong in the guaranteed phase. Speculative or best-effort effects go in the fallible phase.
 
