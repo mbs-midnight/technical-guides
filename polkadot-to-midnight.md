@@ -10,11 +10,11 @@
 
 ## 1. Why Midnight? The Pitch for Polkadot Developers
 
-Polkadot's core thesis is that blockchains should be interoperable and appchain-specialized. You've internalized that thesis — whether you're writing ink! contracts, building Substrate pallets, or architecting parachains. You understand that the runtime is the product, that WebAssembly is the right compilation target, and that cross-chain communication is a first-class concern.
+Polkadot's core thesis is that blockchains should be interoperable and appchain-specialized. You've internalized that thesis — whether you're writing ink! or Solidity contracts, building Substrate pallets, or architecting parachains. You understand that the runtime is the product, that WebAssembly is the right compilation target, and that cross-chain communication is a first-class concern.
 
 What Polkadot doesn't give you — at least not at the smart contract layer — is privacy. Every ink! contract's storage is public. Every pallet's state is readable by anyone with an RPC connection. Every transaction is visible on-chain. For regulated financial applications, enterprise data sharing, confidential business logic, or compliance-driven workflows, this is a blocker.
 
-The Polkadot ecosystem went through a significant shift in early 2026. Polkadot Hub launched as the primary smart contract destination — a production-ready platform with a dual-VM architecture supporting both REVM (full EVM compatibility, deploy Solidity unmodified) and PVM (native RISC-V execution via `pallet-revive`). At the same time, Parity dropped active maintenance of ink! in January 2026. The ink! Alliance — a group of former Parity engineers — picked it up with Polkadot Treasury funding and continues development, but the ecosystem's center of gravity has shifted decisively toward Solidity-on-REVM as the primary smart contract path.
+The Polkadot ecosystem went through a significant shift in early 2026. Polkadot Hub launched as the primary smart contract destination — a production-ready platform with a dual-VM architecture supporting both REVM (full EVM compatibility, deploy Solidity unmodified) and PVM (native RISC-V execution via `pallet-revive`). At the same time, ink! was fully discontinued in January 2026. Parity dropped active maintenance, the ink! Alliance attempted to take it over but failed to secure Polkadot Treasury funding, and shut down — issues and pull requests are locked. The ecosystem's center of gravity has shifted decisively toward Solidity-on-REVM as the primary smart contract path, with Parity filling part of the Rust gap via RevX, a new IDE for Rust contracts targeting PVM.
 
 This context matters for a guide to Midnight because **the most likely Polkadot developer reading this is now a Solidity developer**, not a Rust/ink! developer. If that's you, the Ethereum guide in this series covers the Solidity→Midnight conceptual mapping in depth. This guide focuses on what's specific to the Polkadot ecosystem context: the Substrate infrastructure you're already running, the appchain vs. smart contract decision framework you're used to, and what Midnight offers that neither REVM nor PVM currently provide.
 
@@ -56,7 +56,7 @@ Polkadot Hub provides a production-ready smart contract platform with a dual-VM 
 
 ### ink! Current Status
 
-Since January 2026, Parity is unable to actively maintain or develop ink! further. However, ink! has become a community project maintained by the ink! Alliance, a loose group of former Parity employees and teams, funded by a Polkadot Treasury grant. It is not abandoned — it is community-maintained with active funding. The ink! Alliance continues releasing updates; ink! now targets PVM via `pallet-revive` rather than the older Wasm-based `pallet-contracts`. If you're actively building with ink!, it remains a viable path, just with a different maintenance structure than before.
+Since January 2026, ink! is fully discontinued. Parity dropped active maintenance, and the ink! Alliance — a group of former Parity engineers who attempted to take stewardship — was unable to secure Polkadot Treasury funding to continue the work. The Alliance announced discontinuation, and the GitHub repository has locked down issues and pull requests. ink! is not community-maintained; it is dead. Parity is filling part of the Rust-on-Polkadot gap with RevX, a new IDE for writing Rust smart contracts targeting the PVM environment — but this is a new tool, not a continuation of ink!. If you have existing ink! contracts, the path forward is migration to Solidity-on-REVM or Rust-on-PVM via the new tooling.
 
 ### What Midnight Adds
 
@@ -484,8 +484,8 @@ my-midnight-dapp/
 | Midnight Discord | https://discord.com/invite/midnightnetwork |
 | Midnight MCP (AI-assisted dev) | https://docs.midnight.network/blog/midnight-mcp-ai-assisted-development |
 | Polkadot Hub Smart Contracts | https://docs.polkadot.com/smart-contracts/overview/ |
-| ink! Alliance (community) | https://use.ink |
+| ink! (archived, discontinued Jan 2026) | https://use.ink |
 
 ---
 
-*Sourced from official Midnight and Polkadot documentation, current as of June 2026. Polkadot Hub dual-VM (REVM + PVM) launched January 2026. ink! active maintenance transferred from Parity to the ink! Alliance (community, Treasury-funded) in January 2026. Compact 1.0 does not yet support cross-contract calls. Midnight mainnet is in a federated phase with decentralization in progress. Zswap/coin mechanics are flagged by the official docs as not yet performance-optimized — verify against current docs before shipping production integrations.*
+*Sourced from official Midnight and Polkadot documentation, current as of June 2026. Polkadot Hub dual-VM (REVM + PVM) launched January 2026. ink! was fully discontinued in January 2026 — Parity dropped maintenance and the ink! Alliance failed to secure Polkadot Treasury funding; issues and pull requests are locked. Parity's RevX IDE provides a new path for Rust contracts on PVM. Compact 1.0 does not yet support cross-contract calls. Midnight mainnet is in a federated phase with decentralization in progress. Zswap/coin mechanics are flagged by the official docs as not yet performance-optimized — verify against current docs before shipping production integrations.*
