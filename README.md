@@ -14,11 +14,12 @@ All guides target Midnight mainnet (launched March 2026) and Compact `language_v
 |---|---|
 | [From Ethereum to Midnight](./ethereum-to-midnight.md) | Solidity / EVM developers |
 | [From Solana to Midnight](./solana-to-midnight.md) | Rust / Anchor / SVM developers |
-| [From Polkadot to Midnight](./polkadot-to-midnight.md) | ink! / Substrate / parachain developers |
+| [From Polkadot to Midnight](./polkadot-to-midnight.md) | Solidity/REVM developers on Polkadot Hub; ink!/Rust/PVM developers; parachain developers |
 | [From Cosmos to Midnight](./cosmos-to-midnight.md) | CosmWasm / Cosmos SDK developers |
 | [From Cardano to Midnight](./cardano-to-midnight.md) | Aiken / Plutus / eUTXO developers |
+| [Midnight for AI Builders](./midnight-for-ai-builders.md) | AI/ML engineers integrating Midnight into agent systems, compliance pipelines, or verifiable decision workflows |
 
-Each guide includes:
+Each migration guide includes:
 - What carries over from your current ecosystem (and why)
 - What needs to be completely rewired
 - Architecture comparison with your familiar mental model
@@ -28,6 +29,8 @@ Each guide includes:
 - Security patterns: what disappears, what still applies, what's new
 - A full cheat sheet of concept-to-concept mappings
 - A suggested learning path to get productive fast
+
+The AI builders guide is structured differently — it's organized around four integration patterns (verifiable decisions, private data provenance, compliance without disclosure, agent-to-agent credentialing) with TypeScript and Python examples. It does not assume blockchain experience.
 
 ---
 
@@ -161,6 +164,9 @@ These docs were written and verified against primary sources (Midnight docs, MIP
 | "Cross-contract calls via module imports" | Module imports work at compile time; **no runtime cross-contract calls in Compact 1.0** |
 | "Check current docs" for failed tx fees | Two-phase model: guaranteed-phase DUST is forfeited on fallible-phase failure |
 | "Mainnet" (unqualified) | Federated mainnet — trusted operators currently; SPO decentralization in Mōhalu phase |
+| "ink! was abandoned" (Polkadot guide) | Parity dropped maintenance January 2026; ink! Alliance (community, Treasury-funded) picked it up — community-maintained, not abandoned |
+| Polkadot primary contract path is ink!/Rust | Polkadot Hub launched 2026 with REVM (Solidity) as primary path; PVM (Solidity via `resolc` or Rust) for performance-intensive workloads |
+| `@solana/web3.js` as current Solana SDK | `@solana/web3.js` is deprecated; `@solana/kit` is the current SDK |
 
 ---
 
@@ -170,7 +176,7 @@ These docs were written and verified against primary sources (Midnight docs, MIP
 |---|---|
 | Midnight mainnet | March 31, 2026 (federated phase) |
 | Compact version | `language_version >= 0.23` |
-| Last reviewed | June 2026 |
+| Last reviewed | June 2026 (full ecosystem verification pass) |
 | Cross-contract calls | Not yet implemented (Compact 1.0) |
 | Zswap mechanics | Stable conceptually; implementation not yet performance-optimized |
 
