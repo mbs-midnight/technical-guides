@@ -300,47 +300,46 @@ contract Vault {
 **Compact:**
 
 ```compact
-pragma language_version >= 0.23;
+pragma language_version >= 0.16 && <= 0.23;
+
 import CompactStandardLibrary;
 
-enum State { UNSET, SET }
+export enum State { unset, set }
 
-export ledger authority: Bytes<32>;
+export sealed ledger authority: Bytes<32>;
 export ledger value: Uint<64>;
 export ledger state: State;
 export ledger round: Counter;
 
 witness getSecretKey(): Bytes<32>;
 
-// Helper circuit: domain-separated commitment with round counter
-// Never use persistentHash(sk) directly — domain confusion and replay attacks
-// Never use ownPublicKey() — it is unconstrained (see security section)
+// Domain-separated owner commitment. NO round counter here:
+// authority is a long-lived value we compare against on every call,
+// so it must stay stable. The domain tag stops the same secret key
+// from producing the same commitment across different contracts.
 circuit ownerKey(sk: Bytes<32>): Bytes<32> {
-    return persistentHash<Vector<3, Bytes<32>>>(
-        [pad(32, "vault:owner:"), round as Bytes<32>, sk]
-    );
+    return persistentHash<Vector<2, Bytes<32>>>([pad(32, "vault:owner:"), sk]);
 }
 
 constructor(sk: Bytes<32>, initialValue: Uint<64>) {
     authority = disclose(ownerKey(sk));
     value = disclose(initialValue);
-    state = State.UNSET;
+    state = State.unset;
     round.increment(1);
 }
 
 export circuit set(newValue: Uint<64>): [] {
-    assert(state == State.UNSET, "Already set");
-    // Prove caller knows the secret behind authority — without revealing the secret
-    assert(ownerKey(getSecretKey()) == authority, "Not authorized");
+    assert(state == State.unset, "Already set");
+    assert(disclose(ownerKey(getSecretKey()) == authority), "Not authorized");
     value = disclose(newValue);
-    state = State.SET;
+    state = State.set;
     round.increment(1);
 }
 
 export circuit clear(): [] {
-    assert(state == State.SET, "Nothing to clear");
-    assert(ownerKey(getSecretKey()) == authority, "Not authorized");
-    state = State.UNSET;
+    assert(state == State.set, "Nothing to clear");
+    assert(disclose(ownerKey(getSecretKey()) == authority), "Not authorized");
+    state = State.unset;
     round.increment(1);
 }
 ```
