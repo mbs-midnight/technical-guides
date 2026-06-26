@@ -4,7 +4,7 @@
 
 **Midnight Foundation | June 2026**
 
-> **Version note:** Midnight mainnet launched March 2026. Compact targets `language_version >= 0.23`. Cross-contract calls are reserved in the language spec but not yet implemented in Compact 1.0 — see §4. Always verify against [docs.midnight.network](https://docs.midnight.network) before shipping.
+> **Version note:** Midnight mainnet launched March 31, 2026 in a federated phase — a curated set of trusted node operators (IOG, Google Cloud, Vodafone) runs the network while decentralization via Cardano SPO onboarding is completed. Compact targets `language_version >= 0.23`. Cross-contract calls are reserved in the language spec but not yet implemented in Compact 1.0 — see §4. Always verify against [docs.midnight.network](https://docs.midnight.network) before shipping.
 
 ---
 
@@ -159,22 +159,31 @@ pragma language_version >= 0.23;
 import CompactStandardLibrary;
 
 // On-chain state — each field declared individually (NOT a ledger { } block)
-export ledger owner: Bytes<32>;
+export ledger authority: Bytes<32>;
 export ledger value: Uint<64>;
 export ledger round: Counter;   // always include a round counter — see §7
 
 // Witness: reads private key locally — never leaves the user's machine
 witness getSpendingKey(): Bytes<32>;
 
-constructor(initialOwner: Bytes<32>) {
-    owner = disclose(initialOwner);
+// Helper circuit: domain-separated identity commitment with round counter
+// Never use persistentHash(sk) directly — domain confusion and replay attacks
+// Never use ownPublicKey() — it is unconstrained (see §7 security section)
+circuit ownerKey(sk: Bytes<32>): Bytes<32> {
+    return persistentHash<Vector<3, Bytes<32>>>(
+        [pad(32, "myapp:owner:"), round as Bytes<32>, sk]
+    );
+}
+
+constructor(initialOwnerSk: Bytes<32>) {
+    authority = disclose(ownerKey(initialOwnerSk));
     round.increment(1);
 }
 
 // Circuit: exported entry point, equivalent to an Anchor instruction handler
 export circuit setValue(newValue: Uint<64>): [] {
     // Access control: prove knowledge of the owner's private key
-    assert(persistentHash(getSpendingKey()) == owner, "Not authorized");
+    assert(ownerKey(getSpendingKey()) == authority, "Not authorized");
     value = disclose(newValue);
     round.increment(1);
 }
@@ -193,7 +202,7 @@ export circuit getValue(): Uint<64> {
 | Program structure | `#[program]` mod with instruction fns | File IS the contract; circuits are entry points |
 | State storage | `#[account]` struct in a PDA | `export ledger field: Type;` declarations |
 | Account validation | `#[derive(Accounts)]` struct + constraints | No account list — ownership proved via ZK |
-| Access control | Signer checks in Accounts struct | `assert(persistentHash(witness()) == owner)` |
+| Access control | Signer checks in Accounts struct | `assert(ownerKey(getSpendingKey()) == authority)` — see §4 |
 | Private inputs | Not possible | `witness` functions (off-chain, local) |
 | Explicit disclosure | Not needed (everything public) | `disclose()` required for private → public |
 | Instruction handler | `pub fn my_ix(ctx: Context<MyAccounts>, ...)` | `export circuit myCircuit(...): []` |
@@ -232,17 +241,19 @@ pub struct UpdateValue<'info> {
 
 ```compact
 // Compact equivalent — no signer list; ZK proof of key knowledge instead
+// ownerKey helper circuit uses persistentHash with domain tag + round counter
+// Never use persistentHash(sk) directly or ownPublicKey() — see §7
 witness getSpendingKey(): Bytes<32>;
 
 export circuit updateValue(newValue: Uint<64>): [] {
     // Prove caller knows the private key behind the stored commitment
-    assert(persistentHash(getSpendingKey()) == owner, "Not authorized");
+    assert(ownerKey(getSpendingKey()) == authority, "Not authorized");
     value = disclose(newValue);
     round.increment(1);
 }
 ```
 
-This pattern — store a commitment to a public key or secret, prove knowledge via witness — is the Midnight equivalent of Anchor's `Signer` constraint. It's used everywhere: token ownership, governance, role-based access. Get comfortable with it early.
+This pattern — store an `ownerKey` commitment at deployment, prove knowledge via the `ownerKey` helper circuit — is the Midnight equivalent of Anchor's `Signer` constraint. It's used everywhere: token ownership, governance, role-based access. Get comfortable with it early.
 
 ---
 
@@ -257,14 +268,16 @@ Midnight inverts this. **Private by default** means any value derived from a wit
 ```compact
 witness _secretBalance(): Uint<64>;   // underscore = private by convention
 
+export ledger publicTotal: Uint<64>;
+
 export circuit reportBalance(): [] {
     const bal = _secretBalance();
 
     // ❌ COMPILE ERROR: witness-derived value cannot land on-chain directly
-    ledger.publicTotal = ledger.publicTotal + bal;
+    publicTotal = publicTotal + bal;
 
     // ✅ CORRECT: explicitly declare intent to make this value public
-    ledger.publicTotal = ledger.publicTotal + disclose(bal);
+    publicTotal = publicTotal + disclose(bal);
 }
 ```
 
@@ -487,7 +500,7 @@ Solana has a well-documented set of security pitfalls: missing signer checks, mi
 
 - **`assert()` for invariants:** Same concept as Anchor's `require!()`. Proof fails if violated — equivalent to a transaction abort.
 - **Arithmetic overflow:** Midnight uses fixed-size integer types (`Uint<64>`, `Uint<128>`). Overflow behavior is defined at the type level. Audit your arithmetic.
-- **Access control completeness:** Every exported circuit that should be restricted needs its own `assert(persistentHash(witness()) == owner)`. No global authorization — check it everywhere it's needed.
+- **Access control completeness:** Every exported circuit that should be restricted needs its own `assert(ownerKey(getSpendingKey()) == authority)` check using the `ownerKey` helper circuit pattern. No global authorization — check it everywhere it's needed.
 - **Round counters:** Always include a `round: Counter` field in ledger state and increment it in every circuit that modifies state. Without it, transaction correlation analysis becomes easier. The Compact standard library's `Counter` type makes this one line.
 
 ### New Attack Surfaces
@@ -517,9 +530,9 @@ Solana has a well-documented set of security pitfalls: missing signer checks, mi
 | `#[derive(Accounts)]` | No equivalent | UTXO ownership proved via ZK proof |
 | `ctx.accounts.state.field` | `fieldName` directly | Direct ledger access in circuit body |
 | `pub fn my_ix(ctx)` | `export circuit myCircuit()` | `export` = callable in transaction |
-| `Signer<'info>` | `assert(persistentHash(witness()) == owner)` | Prove key knowledge instead |
+| `Signer<'info>` | `assert(ownerKey(getSpendingKey()) == authority)` | `ownerKey` helper circuit with domain tag + round counter |
 | `require!(cond, err)` | `assert(cond, "message")` | Proof fails on violation |
-| `msg.sender` / signer | No equivalent | Use `persistentHash(getSpendingKey())` pattern |
+| `msg.sender` / signer | No equivalent | Use `ownerKey(getSpendingKey())` pattern with domain-separated commitment |
 | SPL Token transfer | Consume UTXO, create UTXO | UTXO model replaces token accounts |
 | ATA (Associated Token Account) | No equivalent | UTXOs self-describe ownership |
 | `invoke()` / CPI | **Not implemented in Compact 1.0** | `contract` keyword reserved, not functional |
