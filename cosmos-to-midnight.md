@@ -16,6 +16,8 @@ What the Cosmos appchain model doesn't give you natively is privacy at the smart
 
 **One-line pitch:** Midnight is built exactly for those cases — programmable on-chain logic where the underlying data must remain private. It uses zero-knowledge proofs as the execution model, not as an add-on. Privacy is structural, not policy-based. And like Cosmos, Midnight runs on the Polkadot SDK (formerly Substrate) — so the node infrastructure is more familiar than you might expect.
 
+> **Note on Cosmos EVM:** The Cosmos Stack now includes Cosmos EVM — a native EVM framework (security-audited as of v0.4.0, live on chains including Ripple, Mezo, KiiChain, and Mantra) that gives Cosmos chains full Ethereum capabilities: Solidity smart contracts, Ethereum JSON-RPC, and compatibility with standard Ethereum tooling. If you're a Solidity developer building on a Cosmos EVM chain, the Ethereum→Midnight guide in this series covers the Solidity→Compact mapping in depth. This guide focuses on the CosmWasm/Rust path and the Cosmos-specific ecosystem context.
+
 ### What Carries Over from Cosmos
 
 - **Rust mental model.** Compact is TypeScript-like, but your type-safety instincts about explicit errors and compile-time correctness transfer well.
