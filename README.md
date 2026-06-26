@@ -131,7 +131,7 @@ Every guide highlights the `ownPublicKey()` vulnerability, which is explicitly d
 
 > **Never use `ownPublicKey()` for access control in Compact circuits.** It compiles to an unconstrained private input that the prover can set to any value — including the stored authority commitment — without knowing any secret key.
 
-The correct pattern uses a custom helper circuit wrapping `persistentHash` with a domain tag and the round counter:
+The correct pattern uses a custom helper circuit wrapping `persistentHash` with a domain tag. A round counter is recommended when you need to break transaction linkability — i.e., prevent observers from correlating multiple transactions to the same user:
 
 ```compact
 witness secretKey(): Bytes<32>;
