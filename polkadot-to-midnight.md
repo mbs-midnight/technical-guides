@@ -253,18 +253,21 @@ Midnight inverts this at the protocol level.
 ```compact
 witness _userBalance(): Uint<64>;   // private: underscore = convention
 
+export ledger total: Uint<64>;
+export ledger meetsThreshold: Boolean;
+
 export circuit updateBalance(): [] {
     const bal = _userBalance();
 
     // ❌ COMPILE ERROR: witness-derived value cannot land on-chain
-    ledger.total = ledger.total + bal;
+    total = total + bal;
 
     // ✅ CORRECT: explicit privacy boundary crossing
-    ledger.total = ledger.total + disclose(bal);
+    total = total + disclose(bal);
 
     // ✅ ALSO VALID: prove a property without disclosing the value
     assert(bal >= 1000, "Balance below threshold");
-    ledger.meetsThreshold = disclose(true);  // only the boolean is on-chain
+    meetsThreshold = disclose(true);  // only the boolean is on-chain
 }
 ```
 
